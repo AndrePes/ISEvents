@@ -44,10 +44,16 @@ function toEventItem(
   service: EquipmentServiceRow,
   providersById: Map<string, ProviderRow>
 ): EventItem | null {
+  if (!service || !providersById) {
+    console.error("Failed to create EventItem. One or more parameters are null or undefined.");
+    return null;
+  }
+
   if (
     service.category !== "Ausstattung" &&
     service.category !== "Dienstleistung"
   ) {
+    console.error("Event catgeory not set for event:", service)
     return null;
   }
 
@@ -73,19 +79,28 @@ function toEventItem(
   };
 }
 
-export async function fetchCatalogItems(): Promise<EventItem[]> {
+export async function fetchCatalogItems(
+  dateFrom?: string,
+  dateTo = dateFrom
+): Promise<EventItem[]> {
+  // Get the client
   const supabase = getSupabaseClient();
 
+  // Fetch all rows from EquipmentServices
   const { data: services, error: servicesError } = await supabase
     .from("EquipmentServices")
     .select("*")
     .order("created_at", { ascending: false });
 
+  // If error
   if (servicesError) {
     throw new Error(servicesError.message);
   }
 
+  //
   const serviceRows = (services ?? []) as EquipmentServiceRow[];
+  
+  // Extract all provider ids from EquipmentServices
   const providerIds = Array.from(
     new Set(
       serviceRows
@@ -113,9 +128,15 @@ export async function fetchCatalogItems(): Promise<EventItem[]> {
     providerRows.map((provider) => [provider.id, provider])
   );
 
-  return serviceRows
+  const items = serviceRows
     .map((service) => toEventItem(service, providersById))
     .filter((item): item is EventItem => Boolean(item));
+
+  if (!dateFrom || !dateTo) {
+    return items;
+  }
+
+  return filterAvailableItems(items, dateFrom, dateTo);
 }
 
 export function filterAvailableItems(

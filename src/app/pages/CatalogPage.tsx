@@ -14,10 +14,7 @@ import { de } from "date-fns/locale";
 import { EventItem } from "../types";
 import { ItemCard } from "../components/ItemCard";
 import { RequestModal } from "../components/RequestModal";
-import {
-  fetchCatalogItems,
-  filterAvailableItems,
-} from "../lib/catalogRepository";
+import { fetchCatalogItems } from "../lib/catalogRepository";
 
 type FilterTab = "Alle" | "Ausstattung" | "Dienstleistung";
 
@@ -53,16 +50,15 @@ export function CatalogPage() {
       setErrorMessage("");
 
       try {
-        const items = await fetchCatalogItems();
-        const available = filterAvailableItems(items, dateFrom, dateTo);
+        const items = await fetchCatalogItems(dateFrom, dateTo);
 
         if (ignore) return;
 
         setTotalItemCount(items.length);
-        setAvailableItems(available);
+        setAvailableItems(items);
         setSelectedItems((currentSelectedItems) =>
           currentSelectedItems.filter((selectedItem) =>
-            available.some((availableItem) => availableItem.id === selectedItem.id)
+            items.some((availableItem) => availableItem.id === selectedItem.id)
           )
         );
       } catch (error) {
