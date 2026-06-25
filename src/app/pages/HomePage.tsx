@@ -23,9 +23,6 @@ import { DateRangePicker } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { EVENT_TYPES } from "../types";
 
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1773745060497-4cc1df774c72?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1920";
-
 const HOW_IT_WORKS = [
   {
     step: "01",
@@ -104,23 +101,15 @@ export function HomePage() {
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${HERO_IMAGE})` }}
+          style={{ backgroundImage: 'url(images/hero_image.jpg)' }}
         />
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/60 to-slate-900/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-500/80 via-slate-900/60 to-slate-900/90" />
 
         {/* Nav */}
         <nav className="relative z-10 flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center">
-              <Star className="w-4 h-4 text-white fill-white" />
-            </div>
-            <span
-              className="text-white text-xl"
-              style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
-            >
-              ISEvents
-            </span>
+              <img src="images/isevents_logo.svg" alt="ISEvents" width="200px"/>
           </div>
           <div className="hidden md:flex items-center gap-6 text-white/80 text-sm">
             <a href="#wie-es-funktioniert" className="hover:text-white transition-colors">
