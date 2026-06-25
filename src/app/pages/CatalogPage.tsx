@@ -153,15 +153,7 @@ export function CatalogPage() {
             <div className="w-px h-5 bg-slate-200" />
 
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center">
-                <Star className="w-3.5 h-3.5 text-white fill-white" />
-              </div>
-              <span
-                className="text-slate-900 text-lg hidden sm:inline"
-                style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
-              >
-                ISEvents
-              </span>
+                <img src="images/isevents_logo.svg" alt="ISEvents" width="100px"/>
             </div>
           </div>
 
