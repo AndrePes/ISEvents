@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Send, CheckCircle2, Loader2, User, Mail, Phone, MessageSquare } from "lucide-react";
 import { EventItem } from "../types";
+import { EmailClient } from "@azure/communication-email"
 
 interface RequestModalProps {
   selectedItems: EventItem[];
@@ -43,6 +44,29 @@ function formatDateRangeDE(dateFrom: string, dateTo: string): string {
   return dateFrom === dateTo ? formattedFrom : `${formattedFrom} - ${formattedTo}`;
 }
 
+export async function sendMail(email: string, items: EventItem[]) {
+
+    const response = await fetch("/api/sendMail", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            email,
+            items
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error("Mail konnte nicht gesendet werden.");
+    }
+
+    return await response.json();
+}
+
 export function RequestModal({
   selectedItems,
   dateFrom,
@@ -55,6 +79,20 @@ export function RequestModal({
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+
+  const groupItemsByProviderEmail = (items: EventItem[]): Record<string, EventItem[]> => {
+    return items.reduce<Record<string, EventItem[]>>((groups, item) => {
+      const email = item.provider.email;
+
+      if (!groups[email]) {
+        groups[email] = [];
+      }
+
+      groups[email].push(item);
+
+      return groups;
+    }, {});
+  }
 
   const validate = (): boolean => {
     const newErrors: Partial<FormState> = {};
@@ -80,7 +118,27 @@ export function RequestModal({
 
     // In a real implementation, this would call a backend API or Supabase Edge Function
     // to send emails to each provider's email address:
-    // selectedItems.forEach(item => sendEmail(item.provider.email, { form, dateFrom, dateTo, eventType }))
+    const aRecipients = selectedItems.map(et => ({
+      address: et.provider.email}));
+
+    const groupedItems = groupItemsByProviderEmail(selectedItems);
+    console.log(groupedItems);
+    
+    const aPromises = [];
+
+    Object.entries(groupedItems).forEach(([email, items]) => {
+      aPromises.push(new Promise ((resolve) => {
+        console.log(`Send email to ${email}`);
+        
+        items.forEach(item => {
+          console.log(`- ${item.name}`);
+        });
+        
+        sendMail(email, items);
+      
+      }));
+    });
+
 
     setLoading(false);
     setSent(true);
