@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Send, CheckCircle2, Loader2, User, Mail, Phone, MessageSquare } from "lucide-react";
 import { EventItem } from "../types";
-import { EmailClient } from "@azure/communication-email"
+import { request } from "https";
 
 interface RequestModalProps {
   selectedItems: EventItem[];
@@ -30,6 +30,14 @@ const INITIAL_FORM: FormState = {
   message: "",
 };
 
+interface SendMailRequest {
+  email: string;
+  messageHeader: string;
+  messageBody: string;
+  dateRange: string;
+  items: EventItem[];
+}
+
 function formatDateDE(dateStr: string): string {
   if (!dateStr) return "";
   const [year, month, day] = dateStr.split("-");
@@ -44,27 +52,11 @@ function formatDateRangeDE(dateFrom: string, dateTo: string): string {
   return dateFrom === dateTo ? formattedFrom : `${formattedFrom} - ${formattedTo}`;
 }
 
-export async function sendMail(email: string, items: EventItem[]) {
-
-    const response = await fetch("/api/sendMail", {
-
-        method: "POST",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-            email,
-            items
-        })
-    });
-
-    if (!response.ok) {
-        throw new Error("Mail konnte nicht gesendet werden.");
-    }
-
-    return await response.json();
+function getDayCount(dateFrom: string, dateTo: string): number {
+  const from = new Date(dateFrom);
+  const to = new Date(dateTo);
+  const diffTime = Math.abs(to.getTime() - from.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
 }
 
 export function RequestModal({
@@ -113,9 +105,6 @@ export function RequestModal({
 
     setLoading(true);
 
-    // Simulate sending emails to providers (mock)
-    await new Promise((resolve) => setTimeout(resolve, 1800));
-
     // In a real implementation, this would call a backend API or Supabase Edge Function
     // to send emails to each provider's email address:
     const aRecipients = selectedItems.map(et => ({
@@ -126,26 +115,78 @@ export function RequestModal({
     
     const aPromises = [];
 
+    // Send emails to each provider
     Object.entries(groupedItems).forEach(([email, items]) => {
-      aPromises.push(new Promise ((resolve) => {
+      aPromises.push(new Promise (async (resolve) => {
         console.log(`Send email to ${email}`);
         
         items.forEach(item => {
           console.log(`- ${item.name}`);
         });
-        
-        sendMail(email, items);
+
+        const req: SendMailRequest = {
+            email: form.email,
+            messageHeader: "Neue Anfrage",
+            messageBody: "Sie haben eine neue Anfrage erhalten.",
+            dateRange: formatDateRangeDE(dateFrom, dateTo),
+            items: selectedItems,
+        };
+
+        const response = await fetch("/api/sendMail", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify(req)
+        });
+
+        if (!response.ok) {
+          setLoading(false);
+          const error = await response.json();
+          throw new Error(error.error ?? "Unknown error");
+        }
       
       }));
     });
 
+    // Send a confirmation email to requester
+    aPromises.push(new Promise (async (resolve) => {
+      console.log(`Send confirmation email to ${form.email}`);
+      
+      const req: SendMailRequest = {
+          email: form.email,
+          messageHeader: "Ihre Anfrage bei ISEvents",
+          messageBody: "Vielen Dank für Ihre Anfrage. Wir haben alle Anbieter informiert. Sie erhalten in Kürze Rückmeldungen von den Anbietern.",
+          dateRange: formatDateRangeDE(dateFrom, dateTo),
+          items: selectedItems,
+      };
 
+      const response = await fetch("/api/sendMail", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(req)
+      });
+
+      if (!response.ok) {
+          setLoading(false);
+          const error = await response.json();
+          throw new Error(error.error ?? "Unknown error");
+      }
+
+    }));
+
+    const allPromises = Promise.all(aPromises).catch((error) => {
+      console.error("Error sending emails:", error);
+      setLoading(false);
+      return;
+    });
+
+    console.log("All emails sent successfully.", allPromises);
     setLoading(false);
     setSent(true);
-
-    setTimeout(() => {
-      onSuccess();
-    }, 1500);
+    onSuccess();
   };
 
   const handleChange = (field: keyof FormState, value: string) => {
@@ -222,7 +263,7 @@ export function RequestModal({
                   ))}
                 </div>
                 <div className="mt-2 text-xs text-amber-600">
-                  <span> Zeitraum: {formatDateRangeDE(dateFrom, dateTo)} · {eventType}</span> 
+                  <span> Zeitraum: {formatDateRangeDE(dateFrom, dateTo)} ({getDayCount(dateFrom, dateTo)} Tage) · {eventType}</span>
                   <br />
 
                   <i> Für individuelle Mietdauer der einzelnen Angebote können gern mit dem Anbieter festgelegt werden.</i>
@@ -315,7 +356,7 @@ export function RequestModal({
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm text-slate-700 mb-1.5">
                   Mietdauer
                 </label>
@@ -327,7 +368,7 @@ export function RequestModal({
                   min="1"
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-colors"
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-sm text-slate-700 mb-1.5">
