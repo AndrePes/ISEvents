@@ -18,10 +18,14 @@ import {
   Baby,
   Snowflake,
   PartyPopper,
+  LogOut,
+  User,
 } from "lucide-react";
 import { DateRangePicker } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { EVENT_TYPES } from "../types";
+import { useAuth } from "../lib/auth";
+import { ProviderRegistrationModal } from "../components/ProviderRegistrationModal";
 
 const HOW_IT_WORKS = [
   {
@@ -67,10 +71,12 @@ function formatDateRange(range: DateRange | undefined): string {
 
 export function HomePage() {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedEventType, setSelectedEventType] = useState<string>("");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [eventTypeOpen, setEventTypeOpen] = useState(false);
+  const [registrationOpen, setRegistrationOpen] = useState(false);
   const [error, setError] = useState("");
 
   const today = startOfDay(new Date());
@@ -92,6 +98,10 @@ export function HomePage() {
         selectedEventType
       )}`
     );
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -118,12 +128,43 @@ export function HomePage() {
             <a href="#kontakt" className="hover:text-white transition-colors">
               Kontakt
             </a>
-            <a
-              href="mailto:info@isevents.de"
-              className="px-4 py-2 border border-white/30 rounded-full text-white hover:bg-white/10 transition-colors"
-            >
-              Anbieter werden
-            </a>
+            {user ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate("/profile")}
+                  className="flex items-center gap-2 px-4 py-2 border border-white/30 rounded-full text-white hover:bg-white/10 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  Profil
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="hover:text-white transition-colors"
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistrationOpen(true)}
+                  className="px-4 py-2 border border-white/30 rounded-full text-white hover:bg-white/10 transition-colors"
+                >
+                  Anbieter werden
+                </button>
+              </>
+            )}
           </div>
         </nav>
 
@@ -471,6 +512,10 @@ export function HomePage() {
           </a>
         </p>
       </footer>
+
+      {registrationOpen && (
+        <ProviderRegistrationModal onClose={() => setRegistrationOpen(false)} />
+      )}
     </div>
   );
 }

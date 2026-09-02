@@ -59,6 +59,7 @@ function toEventItem(
 
   return {
     id: String(service.id),
+    visible: service.visible,
     name: service.name ?? "",
     category: service.category,
     subcategory: service.subcategory ?? "",
