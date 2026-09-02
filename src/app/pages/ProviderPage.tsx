@@ -105,7 +105,6 @@ function OfferModal({
 }) {
   const [form, setForm] = useState(offer);
   const [suitableForText, setSuitableForText] = useState(offer.suitableFor.join("\n"));
-  const [bookedDatesText, setBookedDatesText] = useState(offer.bookedDates.join("\n"));
   const [highlightsText, setHighlightsText] = useState(offer.highlights.join("\n"));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -125,7 +124,7 @@ function OfferModal({
       await onSave({
         ...form,
         suitableFor: fromTextList(suitableForText),
-        bookedDates: fromTextList(bookedDatesText),
+        bookedDates: form.bookedDates,
         highlights: fromTextList(highlightsText),
       });
     } catch (saveError) {
@@ -264,16 +263,6 @@ function OfferModal({
               value={suitableForText}
               onChange={(event) => setSuitableForText(event.target.value)}
               placeholder={EVENT_TYPES.join(", ")}
-              className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500"
-            />
-          </label>
-
-          <label>
-            <span className="mb-1.5 block text-xs text-slate-500">Gebuchte Daten</span>
-            <textarea
-              value={bookedDatesText}
-              onChange={(event) => setBookedDatesText(event.target.value)}
-              placeholder="2026-09-12"
               className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500"
             />
           </label>
