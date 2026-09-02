@@ -39,6 +39,7 @@ export interface ProviderRow {
 export interface EquipmentServiceRow {
   id: number | string;
   created_at: string | null;
+  visible: boolean;
   name: string | null;
   category: string | null;
   subcategory: string | null;
