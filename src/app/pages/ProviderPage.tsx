@@ -48,7 +48,7 @@ const EMPTY_OFFER: ProviderOfferFormValues = {
   subcategory: "",
   description: "",
   price: "",
-  priceUnit: "Event",
+  priceUnit: "pro Event",
   imageUrl: "",
   suitableFor: [],
   bookedDates: [],
@@ -66,6 +66,8 @@ const SUBCATEGORY_OPTIONS = [
   "Sicherheit & Ordnung",
   "Kinderbetreuung",
 ];
+
+const PRICE_UNIT_OPTIONS = ["Pro Stunde", "Pro Tag", "pro Event"];
 
 function toTextList(values: unknown): string {
   return Array.isArray(values)
@@ -89,7 +91,7 @@ function toOfferForm(offer: EquipmentServiceRow): ProviderOfferFormValues {
     subcategory: offer.subcategory ?? "",
     description: offer.description ?? "",
     price: offer.price == null ? "" : String(offer.price),
-    priceUnit: offer.priceUnit ?? "Event",
+    priceUnit: offer.priceUnit ?? "pro Event",
     imageUrl: offer.imageUrl ?? "",
     suitableFor: fromTextList(toTextList(offer.suitableFor)),
     bookedDates: fromTextList(toTextList(offer.bookedDates)),
@@ -245,13 +247,19 @@ function OfferModal({
 
           <label>
             <span className="mb-1.5 block text-xs text-slate-500">Preiseinheit</span>
-            <input
+            <select
               value={form.priceUnit}
               onChange={(event) =>
                 setForm((current) => ({ ...current, priceUnit: event.target.value }))
               }
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500"
-            />
+            >
+              {PRICE_UNIT_OPTIONS.map((priceUnit) => (
+                <option key={priceUnit} value={priceUnit}>
+                  {priceUnit}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="md:col-span-2">
