@@ -97,4 +97,8 @@
 
   Sicherheits-Hinweis: Verwenden Sie im Frontend nur den Supabase Anon Key.
   Service-Role-Keys gehören ausschließlich in serverseitige Funktionen.
+
+  Die Einrichtung des entkoppelten Mailversands über Supabase, Azure Storage
+  Queue, Azure Functions und Communication Services ist in
+  [`docs/mail-queue-setup.md`](docs/mail-queue-setup.md) beschrieben.
   

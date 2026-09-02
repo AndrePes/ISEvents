@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Send, CheckCircle2, Loader2, User, Mail, Phone, MessageSquare } from "lucide-react";
 import { EventItem } from "../types";
-import { request } from "https";
+import { useAuth } from "../lib/auth";
 
 interface RequestModalProps {
   selectedItems: EventItem[];
@@ -17,7 +17,6 @@ interface FormState {
   email: string;
   phone: string;
   guestCount: string;
-  rentalDuration: number;
   message: string;
 }
 
@@ -26,16 +25,25 @@ const INITIAL_FORM: FormState = {
   email: "",
   phone: "",
   guestCount: "",
-  rentalDuration: 1,
   message: "",
 };
 
 interface SendMailRequest {
-  email: string;
-  messageHeader: string;
-  messageBody: string;
-  dateRange: string;
-  items: EventItem[];
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  dateFrom: string;
+  dateTo: string;
+  eventType: string;
+  guestCount: string;
+  message: string;
+  items: Array<
+    Pick<EventItem, "id" | "name" | "description" | "pricePerEvent" | "priceUnit"> & {
+      provider: Pick<EventItem["provider"], "name" | "email">;
+    }
+  >;
 }
 
 function formatDateDE(dateStr: string): string {
@@ -67,24 +75,12 @@ export function RequestModal({
   onClose,
   onSuccess,
 }: RequestModalProps) {
+  const { session } = useAuth();
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-
-  const groupItemsByProviderEmail = (items: EventItem[]): Record<string, EventItem[]> => {
-    return items.reduce<Record<string, EventItem[]>>((groups, item) => {
-      const email = item.provider.email;
-
-      if (!groups[email]) {
-        groups[email] = [];
-      }
-
-      groups[email].push(item);
-
-      return groups;
-    }, {});
-  }
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const validate = (): boolean => {
     const newErrors: Partial<FormState> = {};
@@ -104,89 +100,49 @@ export function RequestModal({
     if (!validate()) return;
 
     setLoading(true);
+    setSubmissionError(null);
 
-    // In a real implementation, this would call a backend API or Supabase Edge Function
-    // to send emails to each provider's email address:
-    const aRecipients = selectedItems.map(et => ({
-      address: et.provider.email}));
-
-    const groupedItems = groupItemsByProviderEmail(selectedItems);
-    console.log(groupedItems);
-    
-    const aPromises = [];
-
-    // Send emails to each provider
-    Object.entries(groupedItems).forEach(([email, items]) => {
-      aPromises.push(new Promise (async (resolve) => {
-        console.log(`Send email to ${email}`);
-        
-        items.forEach(item => {
-          console.log(`- ${item.name}`);
-        });
-
-        const req: SendMailRequest = {
-            email: form.email,
-            messageHeader: "Neue Anfrage",
-            messageBody: "Sie haben eine neue Anfrage erhalten.",
-            dateRange: formatDateRangeDE(dateFrom, dateTo),
-            items: selectedItems,
-        };
-
-        const response = await fetch("/api/sendMail", {
-          method: "POST",
-          headers: {
-              "Content-Type": "application/json"
-          },
-          body: JSON.stringify(req)
-        });
-
-        if (!response.ok) {
-          setLoading(false);
-          const error = await response.json();
-          throw new Error(error.error ?? "Unknown error");
-        }
-      
-      }));
-    });
-
-    // Send a confirmation email to requester
-    aPromises.push(new Promise (async (resolve) => {
-      console.log(`Send confirmation email to ${form.email}`);
-      
+    try {
       const req: SendMailRequest = {
-          email: form.email,
-          messageHeader: "Ihre Anfrage bei ISEvents",
-          messageBody: "Vielen Dank für Ihre Anfrage. Wir haben alle Anbieter informiert. Sie erhalten in Kürze Rückmeldungen von den Anbietern.",
-          dateRange: formatDateRangeDE(dateFrom, dateTo),
-          items: selectedItems,
+        customer: { name: form.name, email: form.email, phone: form.phone },
+        dateFrom,
+        dateTo,
+        eventType,
+        guestCount: form.guestCount,
+        message: form.message,
+        items: selectedItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          pricePerEvent: item.pricePerEvent,
+          priceUnit: item.priceUnit,
+          provider: { name: item.provider.name, email: item.provider.email },
+        })),
       };
 
       const response = await fetch("/api/sendMail", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify(req)
+        body: JSON.stringify(req),
       });
 
       if (!response.ok) {
-          setLoading(false);
-          const error = await response.json();
-          throw new Error(error.error ?? "Unknown error");
+        const error = await response.json();
+        throw new Error(error.error ?? "Unknown error");
       }
-
-    }));
-
-    const allPromises = Promise.all(aPromises).catch((error) => {
+      setSent(true);
+      onSuccess();
+    } catch (error) {
       console.error("Error sending emails:", error);
+      setSubmissionError(
+        error instanceof Error ? error.message : "Die Anfrage konnte nicht gesendet werden."
+      );
+    } finally {
       setLoading(false);
-      return;
-    });
-
-    console.log("All emails sent successfully.", allPromises);
-    setLoading(false);
-    setSent(true);
-    onSuccess();
+    }
   };
 
   const handleChange = (field: keyof FormState, value: string) => {
@@ -390,6 +346,11 @@ export function RequestModal({
                 * Pflichtfelder. Ihre Anfrage wird direkt an die Anbieter der
                 ausgewählten Leistungen weitergeleitet.
               </p>
+              {submissionError && (
+                <p role="alert" className="text-sm text-red-600">
+                  {submissionError}
+                </p>
+              )}
             </form>
           )}
         </div>
