@@ -55,6 +55,18 @@ const EMPTY_OFFER: ProviderOfferFormValues = {
   highlights: [],
 };
 
+const SUBCATEGORY_OPTIONS = [
+  "Zelt & Überdachung",
+  "Musik & Entertainment",
+  "Gastronomie",
+  "Dekoration",
+  "Beleuchtung & Technik",
+  "Möbel & Ausstattung",
+  "Foto & Video",
+  "Sicherheit & Ordnung",
+  "Kinderbetreuung",
+];
+
 function toTextList(values: unknown): string {
   return Array.isArray(values)
     ? values.filter((value): value is string => typeof value === "string").join("\n")
@@ -201,13 +213,20 @@ function OfferModal({
 
           <label>
             <span className="mb-1.5 block text-xs text-slate-500">Unterkategorie</span>
-            <input
+            <select
               value={form.subcategory}
               onChange={(event) =>
                 setForm((current) => ({ ...current, subcategory: event.target.value }))
               }
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500"
-            />
+            >
+              <option value="">Unterkategorie auswählen</option>
+              {SUBCATEGORY_OPTIONS.map((subcategory) => (
+                <option key={subcategory} value={subcategory}>
+                  {subcategory}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label>
