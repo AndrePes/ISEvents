@@ -24,3 +24,31 @@ export interface Provider {
   city?: string;
   cityCode?: string;
 }
+
+export interface MailItem {
+  id: string;
+  name: string;
+  description: string;
+  pricePerEvent: number;
+  priceUnit: string;
+  provider: Pick<Provider, "name" | "email">;
+}
+
+export interface CreateBookingRequestBody {
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  dateFrom: string;
+  dateTo: string;
+  eventType: string;
+  guestCount: string;
+  message: string;
+  items: MailItem[];
+}
+
+export interface BookingRequestMessage extends CreateBookingRequestBody {
+  version: 1;
+  bookingRequestId: string;
+}

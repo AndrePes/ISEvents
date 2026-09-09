@@ -10,6 +10,7 @@ export interface Provider {
 
 export interface EventItem {
   id: string;
+  visible?: boolean;
   name: string;
   category: "Ausstattung" | "Dienstleistung";
   subcategory: string;
@@ -39,6 +40,7 @@ export interface ProviderRow {
 export interface EquipmentServiceRow {
   id: number | string;
   created_at: string | null;
+  visible: boolean;
   name: string | null;
   category: string | null;
   subcategory: string | null;
@@ -78,3 +80,18 @@ export const EVENT_TYPES = [
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
+
+export interface ProviderOfferFormValues {
+  id?: number | string;
+  visible: boolean;
+  name: string;
+  category: EventItem["category"];
+  subcategory: string;
+  description: string;
+  price: string;
+  priceUnit: string;
+  imageUrl: string;
+  suitableFor: string[];
+  bookedDates: string[];
+  highlights: string[];
+}

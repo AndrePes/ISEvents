@@ -59,6 +59,7 @@ function toEventItem(
 
   return {
     id: String(service.id),
+    visible: service.visible,
     name: service.name ?? "",
     category: service.category,
     subcategory: service.subcategory ?? "",
@@ -99,11 +100,14 @@ export async function fetchCatalogItems(
 
   //
   const serviceRows = (services ?? []) as EquipmentServiceRow[];
+  const visibleServiceRows = serviceRows.filter(
+    (service) => service.visible === true
+  );
   
   // Extract all provider ids from EquipmentServices
   const providerIds = Array.from(
     new Set(
-      serviceRows
+      visibleServiceRows
         .map((service) => service.providerId)
         .filter((providerId): providerId is string => Boolean(providerId))
     )
@@ -128,7 +132,7 @@ export async function fetchCatalogItems(
     providerRows.map((provider) => [provider.id, provider])
   );
 
-  const items = serviceRows
+  const items = visibleServiceRows
     .map((service) => toEventItem(service, providersById))
     .filter((item): item is EventItem => Boolean(item));
 
