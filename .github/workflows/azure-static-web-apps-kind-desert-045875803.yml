@@ -40,15 +40,3 @@ jobs:
           output_location: "dist" # Built app content directory - optional
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
-      - name: Inspect build output
-        run: |
-          echo "Files in dist:"
-          find dist -maxdepth 3 -type f -print
-
-          echo ""
-          echo "Searching staticwebapp.config.json:"
-          find . -name "staticwebapp.config.json" -print -exec ls -lh {} \;
-
-          echo ""
-          echo "JSON files larger than 15 KB:"
-          find . -name "*.json" -type f -size +15k -exec ls -lh {} \;
